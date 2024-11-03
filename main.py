@@ -6,6 +6,7 @@ from OpenGL.GLU import *
 import math
 
 from objects import car, scene
+from objects.cameras import TopViewCamera, FollowCamera, FrontViewCamera
 
 camera_position = [0.0, 5.0, 15.0]
 camera_distance = 10.0
@@ -16,6 +17,11 @@ camera_top_view = False
 
 carro = car.Carro()
 cenario = scene.Scene()
+
+camera_top_view = TopViewCamera(carro)
+camera_follow = FollowCamera(carro)
+camera_front = FrontViewCamera(carro)
+current_camera = camera_follow
 
 pygame.init()
 pygame.font.init()
@@ -67,28 +73,10 @@ def reshape(width, height):
     glMatrixMode(GL_MODELVIEW)
 
 def display():
-    global camera_position
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
 
-    if camera_top_view:
-        camera_position = [carro.position[0], 15.0, carro.position[2] + 10.0]
-        gluLookAt(camera_position[0], camera_position[1], camera_position[2],
-                  carro.position[0], carro.position[1], carro.position[2],
-                  0, 1, 0)
-    else:
-        desired_cam_x = carro.position[0] - camera_distance * math.cos(math.radians(carro.angle))
-        desired_cam_z = carro.position[2] + camera_distance * math.sin(math.radians(carro.angle))
-        desired_cam_y = carro.position[1] + camera_height
-
-        camera_position[0] += (desired_cam_x - camera_position[0]) * camera_lag
-        camera_position[1] += (desired_cam_y - camera_position[1]) * camera_lag
-        camera_position[2] += (desired_cam_z - camera_position[2]) * camera_lag
-
-        gluLookAt(camera_position[0], camera_position[1], camera_position[2],
-                  carro.position[0], carro.position[1], carro.position[2],
-                  0, 1, 0)
+    current_camera.update()
 
     carro.draw()
     cenario.draw()
@@ -112,7 +100,7 @@ def display():
     glutSwapBuffers()
 
 def keyboard(key, x, y):
-    global camera_top_view
+    global camera_top_view, current_camera
     if key == b'a':
         carro.turning = 1
     if key == b'd':
@@ -125,7 +113,12 @@ def keyboard(key, x, y):
         carro.direction = 1
         carro.running = True
     if key == b'c':
-        camera_top_view = not camera_top_view
+        if current_camera == camera_follow:
+            current_camera = camera_top_view
+        elif current_camera == camera_top_view:
+            current_camera = camera_front
+        elif current_camera == camera_front:
+            current_camera = camera_follow
     glutPostRedisplay()
 
 def keyboard_up(key, x, y):
