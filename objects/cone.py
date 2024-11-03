@@ -5,9 +5,10 @@ import math
 
 
 class Cone:
-    def __init__(self, x, y) -> None:
+    def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.size = 0.5  # Define o tamanho do cone para colisão (raio da base do cilindro)
 
     def draw(self):
         glMaterialfv(GL_FRONT, GL_DIFFUSE, [1.0, 0.25, 0.0, 1.0])
@@ -38,9 +39,20 @@ class Cone:
         glPopMatrix()
 
     def check_collision(self, box_position, box_size):
-        # Calcular a distância entre o carro e a posição do cone
-        cone_distance = math.sqrt((self.x - box_position[0]) ** 2 + (self.y - box_position[2]) ** 2)
+        # Define os limites da caixa delimitadora do carro
+        car_min_x = box_position[0] - box_size
+        car_max_x = box_position[0] + box_size
+        car_min_z = box_position[2] - box_size
+        car_max_z = box_position[2] + box_size
 
-        # Verifica se a distância é menor que um determinado valor (ex. raio da colisão)
-        if cone_distance < (box_size + 0.5):  # Supondo box_size como a largura do carro
-            print("Colisão com o cone detectada!")
+        # Define os limites da caixa delimitadora do cone (com base no centro e no raio da base)
+        cone_min_x = self.x - self.size
+        cone_max_x = self.x + self.size
+        cone_min_z = self.y - self.size
+        cone_max_z = self.y + self.size
+
+        # Verifica se as caixas delimitadoras se sobrepõem
+        if (car_min_x <= cone_max_x and car_max_x >= cone_min_x and
+            car_min_z <= cone_max_z and car_max_z >= cone_min_z):
+            return True
+        return False

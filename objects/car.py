@@ -17,7 +17,8 @@ class Carro:
         self.turning = 0
         self.move_acceleration = 0.01
         self.turn_acceleration = 0.2
-        self.car_color = (0.0, 1.0, 0.0)  # Cor inicial do carro (preto)
+        self.car_color = (0.0, 1.0, 0.0)  # Cor inicial do carro
+        self.size = 2  # Tamanho do cubo do carro
 
     def draw(self):
         # Definindo propriedades do material do carro
@@ -60,7 +61,26 @@ class Carro:
         glPopMatrix()
 
     def check_collision(self, cones):
-        pass
+        # Raio da esfera de colisão do carro
+        car_collision_radius = 1.0  # Ajuste este valor conforme necessário para o tamanho do carro
+
+        for cone in cones:
+            # Raio da esfera de colisão do cone
+            cone_collision_radius = cone.size  # Usando o atributo `size` como raio
+
+            # Calcula a distância entre o centro do carro e o cone
+            distance_x = self.position[0] - cone.x
+            distance_z = self.position[2] - cone.y
+            distance = math.sqrt(distance_x ** 2 + distance_z ** 2)
+
+            # Verifica se a distância é menor que a soma dos raios das esferas
+            if distance < (car_collision_radius + cone_collision_radius):
+                return True  # Colisão detectada
+        return False  # Nenhuma colisão
+
+    def reset(self):
+        self.position = [0.0, 1.5, 0.0]
+        self.angle = 90.0
 
     def update(self, cones):
         # Atualiza a velocidade e a rotação do carro
@@ -103,5 +123,4 @@ class Carro:
                     self.wheel_rotation += 2  # Suaviza a rotação positiva
                 if abs(self.wheel_rotation) < 0.1:  # Para a rotação se muito pequena
                     self.wheel_rotation = 0
-
         self.check_collision(cones)
