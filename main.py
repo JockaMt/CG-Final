@@ -200,9 +200,9 @@ def update(value):
         # Retorna a rotação dos pneus para a rotação original quando as teclas não estão pressionadas
         if wheel_rotation != 0:
             if wheel_rotation > 0:
-                wheel_rotation -= 0.5  # Suaviza a rotação negativa
+                wheel_rotation -= turn_acceleration  # Suaviza a rotação negativa
             else:
-                wheel_rotation += 0.5  # Suaviza a rotação positiva
+                wheel_rotation += turn_acceleration  # Suaviza a rotação positiva
             if abs(wheel_rotation) < 0.1:  # Para a rotação se muito pequena
                 wheel_rotation = 0
 
