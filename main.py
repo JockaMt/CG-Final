@@ -3,83 +3,33 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import math
 
-# Variáveis de posição e orientação da caixa
-box_position = [0.0, 1.5, 0.0]
-box_angle = 90.0  # Ângulo de rotação da caixa em relação ao eixo Y
-running = False
-direction = 0
-turning = 0
-show_collisions = 0.1
-
-# Variáveis de aceleração e velocidade máxima
-move_speed = 0.0
-turn_speed = 0.0
-move_acceleration = 0.01
-turn_acceleration = 0.2
-max_move_speed = 0.1
-max_turn_speed = 2.0
-
-wheel_rotation = 0.0
-original_wheel_rotation = 0.0
+from objects import car, scene
 
 # Variáveis da câmera
 camera_position = [0.0, 5.0, 15.0]
 camera_distance = 10.0
 camera_height = 5.0
 camera_lag = 0.1
-cone_positions = [(2, 2), (0, 2), (-2, 2), (2, 4), (-2, 4), (2, 6), (-2, 6)]
+
+camera_top_view = False  # Adicione esta variável
+
+carro = car.Carro()
+cenario = scene.Scene()
 
 # Configurações iniciais da janela
 def init():
     glClearColor(1.0, 1.0, 1.0, 1.0)
     glEnable(GL_DEPTH_TEST)
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    # Configuração da iluminação
+    # Habilita a iluminação
+    glEnable(GL_LIGHTING)
 
-def draw_car():
-    glColor3f(0.0, 0.0, 0.0)
-    glPushMatrix()
-    glTranslatef(*box_position)
-    glRotatef(box_angle, 0, 1, 0)
-    glutSolidCube(2)
-    glPushMatrix()
-    glColor3f(0.0, 1.0, 0.0)
-    glScalef(1.2, 0.4, 1)
-    glScalef(1, 1, 0.66)
-    glTranslatef(0, -1, 0)
-    glutSolidCube(3)
-    glPopMatrix()
-    # Pneus dianteiros
-    glColor3f(0.2, 0.2, 0.2)
-    glPushMatrix()
-    glTranslatef(1,-1,.7)
-    glRotatef(wheel_rotation, 0, 1, 0)
-    glutSolidCylinder(0.5, 0.4, 12, 12)
-    glPopMatrix()
-    glPushMatrix()
-    glTranslatef(1,-1,-1.1)
-    glRotatef(wheel_rotation, 0, 1, 0) 
-    glutSolidCylinder(0.5, 0.4, 12, 12)
-    glPopMatrix()
-    # Pneus traseiros
-    glPushMatrix()
-    glTranslatef(-1,-1,-1.1)
-    glutSolidCylinder(0.5, 0.4, 12, 12)
-    glPopMatrix()
-    glPushMatrix()
-    glTranslatef(-1,-1,0.7)
-    glutSolidCylinder(0.5, 0.4, 12, 12)
-    glPopMatrix()
-    glPopMatrix()  # Reabilita culling após desenhar a caixa
+    # Habilita a luz 0
+    glEnable(GL_LIGHT0)
+    glLightfv(GL_LIGHT0, GL_POSITION, [0.0, 10.0, 0.0, 1.0])  # Luz pontual acima do centro da cena
 
 
-def draw_cone(x, y):
-    glColor3f(1.0, 0.0, 0.0)
-    glPushMatrix()
-    glTranslatef(x, 0, y)
-    glRotatef(-90, 1, 0, 0)
-    glutSolidCone(0.4, 1, 10, 10)
-    glPopMatrix()
+
 
 # Função de redimensionamento da janela
 def reshape(width, height):
@@ -92,120 +42,72 @@ def reshape(width, height):
     gluPerspective(45, aspect, 1, 50.0)
     glMatrixMode(GL_MODELVIEW)
 
-# Função para desenhar a plataforma, o cone e a caixa
+# Função para desenhar a plataforma, o cone e o carro
 def display():
     global camera_position
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
 
-    # Cálculo da posição desejada da câmera
-    desired_cam_x = box_position[0] - camera_distance * math.cos(math.radians(box_angle))
-    desired_cam_z = box_position[2] + camera_distance * math.sin(math.radians(box_angle))
-    desired_cam_y = box_position[1] + camera_height
+    if camera_top_view:
+        # Câmera fixa em visão superior
+        camera_position = [carro.position[0], 15.0, carro.position[2] + 10.0]  # Posição fixa da câmera
+        gluLookAt(camera_position[0], camera_position[1], camera_position[2],
+                  carro.position[0], carro.position[1], carro.position[2],
+                  0, 1, 0)
+    else:
+        # Cálculo da posição desejada da câmera
+        desired_cam_x = carro.position[0] - camera_distance * math.cos(math.radians(carro.angle))
+        desired_cam_z = carro.position[2] + camera_distance * math.sin(math.radians(carro.angle))
+        desired_cam_y = carro.position[1] + camera_height
 
-    # Interpolação para o efeito de atraso
-    camera_position[0] += (desired_cam_x - camera_position[0]) * camera_lag
-    camera_position[1] += (desired_cam_y - camera_position[1]) * camera_lag
-    camera_position[2] += (desired_cam_z - camera_position[2]) * camera_lag
+        # Interpolação para o efeito de atraso
+        camera_position[0] += (desired_cam_x - camera_position[0]) * camera_lag
+        camera_position[1] += (desired_cam_y - camera_position[1]) * camera_lag
+        camera_position[2] += (desired_cam_z - camera_position[2]) * camera_lag
 
-    gluLookAt(camera_position[0], camera_position[1], camera_position[2],
-              box_position[0], box_position[1], box_position[2],
-              0, 1, 0)
+        gluLookAt(camera_position[0], camera_position[1], camera_position[2],
+                  carro.position[0], carro.position[1], carro.position[2],
+                  0, 1, 0)
 
-    # Desenha os cones primeiro (não transparentes)
-    for i in cone_positions:
-        draw_cone(i[0], i[1])
-
-    # Agora desenha a caixa (transparente)
-    draw_car()
-
-    glColor3f(0.5, 0.5, 0.5)
-    glBegin(GL_QUADS)
-    glVertex3f(-50, 0, -50)
-    glVertex3f(50, 0, -50)
-    glVertex3f(50, 0, 50)
-    glVertex3f(-50, 0, 50)
-    glEnd()
+    # Agora desenha o carro (transparente)
+    carro.draw()
+    cenario.draw()
 
     glutSwapBuffers()
 
-# Função de teclado para mover e rotacionar a caixa
-def keyboard(key, x, y):
-    global running, direction, turning
 
+# Função de teclado para mover e rotacionar o carro
+def keyboard(key, x, y):
+    global camera_top_view  # Certifique-se de usar a variável global
     if key == b'a':
-        turning = 1
+        carro.turning = 1
     if key == b'd':
-        turning = -1
+        carro.turning = -1
 
     if key == b'w':
-        direction = 0
-        running = True
+        carro.direction = 0
+        carro.running = True
     elif key == b's':
-        direction = 1
-        running = True
+        carro.direction = 1
+        carro.running = True
+
+    if key == b'c':
+        camera_top_view = not camera_top_view  # Alterna a visão da câmera
 
     glutPostRedisplay()
 
+
 def keyboard_up(key, x, y):
-    global running, turning, move_speed, turn_speed
     if key in (b'w', b's'):
-        running = False
-        move_speed = 0
+        carro.running = False
+        carro.move_speed = 0
     if key in (b'a', b'd'):
-        turning = 0
+        carro.turning = 0
 
-# Função de atualização para mover a caixa continuamente
+# Função de atualização para mover o carro continuamente
 def update(value):
-    global box_position, box_angle, move_speed, turn_speed, running, direction, wheel_rotation
-
-    # Aceleração linear
-    if running:
-        if move_speed < max_move_speed:
-            move_speed += move_acceleration
-    else:
-        if move_speed > 0:
-            move_speed -= move_acceleration
-            move_speed = max(0, move_speed)
-
-    # Aceleração de rotação
-    if turning != 0:
-        if turn_speed < max_turn_speed:
-            turn_speed += turn_acceleration
-    else:
-        if turn_speed > 0:
-            turn_speed -= turn_acceleration
-            turn_speed = max(0, turn_speed)
-
-    # Atualiza a posição e o ângulo da caixa
-    if direction == 0:
-        box_position[0] += move_speed * math.cos(math.radians(box_angle))
-        box_position[2] -= move_speed * math.sin(math.radians(box_angle))
-    elif direction == 1:
-        box_position[0] -= move_speed * math.cos(math.radians(box_angle))
-        box_position[2] += move_speed * math.sin(math.radians(box_angle))
-
-    # Atualiza a rotação da caixa
-    # Simplificando a rotação do ângulo
-    if turning != 0 and running:
-        # Ajusta o fator de rotação com base na direção e no sentido do giro
-        angle_adjustment = turn_speed * turning * (-1 if direction == 1 else 1)
-        box_angle += angle_adjustment
-        
-        # Atualiza a rotação dos pneus
-        wheel_rotation += turn_speed * turning
-        wheel_rotation = max(-20, min(wheel_rotation, 20))
-    else:
-        # Retorna a rotação dos pneus para a rotação original quando as teclas não estão pressionadas
-        if wheel_rotation != 0:
-            if wheel_rotation > 0:
-                wheel_rotation -= turn_acceleration  # Suaviza a rotação negativa
-            else:
-                wheel_rotation += turn_acceleration  # Suaviza a rotação positiva
-            if abs(wheel_rotation) < 0.1:  # Para a rotação se muito pequena
-                wheel_rotation = 0
-
+    carro.update(cenario.cones)
     glutPostRedisplay()
     glutTimerFunc(16, update, 0)
 
@@ -214,7 +116,7 @@ def main():
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(800, 600)
-    glutCreateWindow("GTA 7")
+    glutCreateWindow("Plataforma com Cone e Carro Móvel")
     init()
     glutDisplayFunc(display)
     glutReshapeFunc(reshape)
