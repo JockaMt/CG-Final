@@ -27,8 +27,10 @@ pygame.init()
 pygame.font.init()
 font = pygame.font.SysFont('Arial', 24)
 
-def render_text(text, x_pos, y_pos):
-    text_surface = font.render(text, True, (0, 0, 0, 255))
+win = ""
+
+def render_text(text, x_pos, y_pos, color):
+    text_surface = font.render(text, True, color)
     text_data = pygame.image.tostring(text_surface, "RGBA", True)
 
     width, height = text_surface.get_size()
@@ -89,8 +91,9 @@ def display():
     glPushMatrix()
     glLoadIdentity()
 
-    render_text("W, A, S, D para se mover", 10, 10)
-    render_text("C para alterar a câmera", 10, 50)
+    render_text("W, A, S, D para se mover", 10, 10, (0, 0, 0, 255))
+    render_text("C para alterar a câmera", 10, 50, (0, 0, 0, 255))
+    render_text(win, 327, 150, (1, 1, 1, 1))
 
     glMatrixMode(GL_PROJECTION)
     glPopMatrix()
@@ -129,8 +132,11 @@ def keyboard_up(key, x, y):
         carro.turning = 0
 
 def update(value):
+    global win
     carro.update(cenario.cones)
     collided = carro.check_collision(cenario.cones)
+    if carro.check_proximity_to_target():
+        win = "Você ganhou!"
     if collided:
         carro.reset()
     glutPostRedisplay()

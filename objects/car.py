@@ -6,7 +6,7 @@ import math
 class Carro:
     def __init__(self):
         self.position = [0.0, 1.5, 0.0]
-        self.angle = 90.0
+        self.angle = -90.0
         self.move_speed = 0.0
         self.turn_speed = 0.0
         self.max_move_speed = 0.1
@@ -19,6 +19,8 @@ class Carro:
         self.turn_acceleration = 0.1
         self.car_color = (0.0, 1.0, 0.0)
         self.size = 2
+        self.target_position = [0.0, 1.5, -7.0]
+        self.target_radius = 1.0
 
     def draw(self):
 
@@ -135,9 +137,10 @@ class Carro:
 
     def reset(self):
         self.position = [0.0, 1.5, 0.0]
-        self.angle = 90.0
+        self.angle = -90.0
 
     def update(self, cones):
+        # Atualiza a posição do carro
         if self.running:
             if self.move_speed < self.max_move_speed:
                 self.move_speed += self.move_acceleration
@@ -175,4 +178,16 @@ class Carro:
                     self.wheel_rotation += 2
                 if abs(self.wheel_rotation) < 0.1:
                     self.wheel_rotation = 0
-        self.check_collision(cones)
+
+        # Verificar colisão com cones
+        if self.check_collision(cones):
+            print("Colisão detectada com um cone!")
+
+    def check_proximity_to_target(self):
+        # Calcular a distância até a posição alvo
+        distance_x = self.position[0] - self.target_position[0]
+        distance_z = self.position[2] - self.target_position[2]
+        distance = math.sqrt(distance_x ** 2 + distance_z ** 2)
+
+        # Verificar se a distância está dentro do raio de proximidade
+        return distance < self.target_radius
