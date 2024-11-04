@@ -1,5 +1,6 @@
 from OpenGL.GL import *
 from objects.cone import Cone
+from objects.sign import Sign
 
 def surface():
     glMaterialfv(GL_FRONT, GL_DIFFUSE, [0.5, 0.5, 0.5, 1.0])
@@ -154,7 +155,11 @@ class Scene:
             Cone(-2, -2),
         ]
 
+        self.sign = Sign(-3.5, 7)
+
     def draw(self):
         surface()
         for cone in self.cones:
             cone.draw()
+        self.sign.set_rotation(0)
+        self.sign.draw()
